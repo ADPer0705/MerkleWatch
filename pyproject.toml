@@ -1,6 +1,6 @@
 [project]
 name = "merklewatch"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic integrity verification tool using Merkle trees and cryptographic hashing"
 readme = "README.md"
 authors = [{ name = "ADPer", email = "adper0705@gmail.com" }]

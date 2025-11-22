@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 from .filesystem import scan_directory
 from .manifest import create_manifest_structure, save_manifest
+from .verification import verify_directory
 
 app = typer.Typer()
 
@@ -39,9 +40,41 @@ def verify(
     directory: Path = typer.Argument(..., help="The directory to verify", exists=True, file_okay=False, dir_okay=True, resolve_path=True)
 ):
     """
-    Verify a directory against a manifest. (Placeholder for v0.1.0)
+    Verify a directory against a manifest.
     """
-    typer.echo("Verification not implemented in v0.1.0")
+    typer.echo(f"Verifying {directory} against {manifest_path}...")
+    
+    try:
+        success, expected, actual, diffs = verify_directory(manifest_path, directory)
+        
+        if success:
+            typer.echo(typer.style("Verification SUCCESSFUL!", fg=typer.colors.GREEN, bold=True))
+            typer.echo(f"Root Hash matches: {actual}")
+        else:
+            typer.echo(typer.style("Verification FAILED!", fg=typer.colors.RED, bold=True))
+            typer.echo(f"Expected Root: {expected}")
+            typer.echo(f"Actual Root:   {actual}")
+            
+            if diffs['modified']:
+                typer.echo("\nModified files:")
+                for f in diffs['modified']:
+                    typer.echo(f"  - {f}")
+                    
+            if diffs['removed']:
+                typer.echo("\nMissing files (removed):")
+                for f in diffs['removed']:
+                    typer.echo(f"  - {f}")
+                    
+            if diffs['added']:
+                typer.echo("\nNew files (added):")
+                for f in diffs['added']:
+                    typer.echo(f"  - {f}")
+            
+            raise typer.Exit(code=1)
+            
+    except Exception as e:
+        typer.echo(f"Error during verification: {e}", err=True)
+        raise typer.Exit(code=1)
 
 if __name__ == "__main__":
     app()
