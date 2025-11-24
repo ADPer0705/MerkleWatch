@@ -8,7 +8,7 @@ def create_manifest_structure(root_hash: str, manifest_data: Dict[str, Any]) -> 
     Assemble the final manifest dictionary.
     """
     return {
-        "merklewatch_version": "0.4.0",
+        "merklewatch_version": "1.0.0",
         "algorithm": "sha256",
         "timestamp": time.time(),
         "timestamp_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

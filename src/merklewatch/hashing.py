@@ -20,16 +20,25 @@ def hash_node(prefix: bytes, data: bytes) -> str:
 
 def hash_file(filepath: Path) -> str:
     """
-    Compute the hash of a file's content.
+    Compute the hash of a file's content using chunked reading.
     Returns the raw SHA256 hash (hex) of the content.
     Note: This is the raw content hash. The leaf node hash will wrap this.
+    
+    Raises:
+        PermissionError: If file cannot be read due to permissions
+        OSError: If file cannot be read for other reasons
     """
     hasher = hashlib.sha256()
     buffer_size = 65536  # 64kb chunks
 
-    with open(filepath, 'rb') as f:
-        while chunk := f.read(buffer_size):
-            hasher.update(chunk)
+    try:
+        with open(filepath, 'rb') as f:
+            while chunk := f.read(buffer_size):
+                hasher.update(chunk)
+    except PermissionError:
+        raise PermissionError(f"Permission denied reading file: {filepath}")
+    except OSError as e:
+        raise OSError(f"Error reading file {filepath}: {e}")
     
     return hasher.hexdigest()
 
