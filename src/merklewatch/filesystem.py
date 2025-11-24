@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 from .hashing import hash_file, compute_leaf_hash, compute_directory_hash
 from .merkle import compute_merkle_root
+from .ignore import IgnoreRules
 
-def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str, Any]) -> str:
+def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str, Any], ignore_rules: Optional[IgnoreRules] = None) -> str:
     """
     Recursively scan a directory, computing hashes and building the Merkle tree.
     
@@ -12,6 +13,7 @@ def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str,
         current_path: The directory currently being scanned.
         root_path: The root directory of the snapshot (for relative paths).
         manifest_data: Dictionary to collect file metadata and directory roots.
+        ignore_rules: Optional IgnoreRules object to filter files.
         
     Returns:
         The Merkle root hash of the current directory.
@@ -32,6 +34,11 @@ def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str,
     # We need to process children in sorted order to ensure deterministic tree
     for entry in entries:
         full_path = current_path / entry
+        
+        # Check ignore rules
+        if ignore_rules and ignore_rules.should_ignore(full_path):
+            continue
+            
         relative_path = full_path.relative_to(root_path).as_posix()
         
         if full_path.is_file():
@@ -53,7 +60,7 @@ def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str,
             
         elif full_path.is_dir():
             # 1. Recurse
-            subdir_root = scan_directory(full_path, root_path, manifest_data)
+            subdir_root = scan_directory(full_path, root_path, manifest_data, ignore_rules)
             
             # 2. Wrap as directory node
             dir_node_hash = compute_directory_hash(subdir_root)

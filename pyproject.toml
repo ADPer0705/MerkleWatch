@@ -1,13 +1,14 @@
 [project]
 name = "merklewatch"
-version = "0.3.0"
+version = "0.4.0"
 description = "Deterministic integrity verification tool using Merkle trees and cryptographic hashing"
 readme = "README.md"
 authors = [{ name = "ADPer", email = "adper0705@gmail.com" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
-    "typer>=0.9.0"
+    "typer>=0.9.0",
+    "questionary>=2.0.0"
 ]
 keywords = ["merkle-tree", "integrity", "cryptography", "hashing", "forensics", "verification"]
 classifiers = [

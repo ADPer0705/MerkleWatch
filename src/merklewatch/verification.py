@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from .filesystem import scan_directory
+from .ignore import IgnoreRules
 
 def load_manifest(manifest_path: Path) -> Dict[str, Any]:
     with open(manifest_path, 'r') as f:
@@ -58,8 +59,11 @@ def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool,
     expected_root = manifest.get('root_hash')
     
     # 2. Scan Directory
+    # Initialize ignore rules
+    ignore_rules = IgnoreRules(target_directory)
+    
     new_manifest_data = {'files': {}, 'directories': {}}
-    actual_root = scan_directory(target_directory, target_directory, new_manifest_data)
+    actual_root = scan_directory(target_directory, target_directory, new_manifest_data, ignore_rules)
     
     # 3. Compare
     success = (expected_root == actual_root)
