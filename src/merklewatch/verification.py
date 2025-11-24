@@ -40,7 +40,7 @@ def compare_manifests(old_manifest: Dict[str, Any], new_manifest_data: Dict[str,
         'modified': sorted(modified)
     }
 
-def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool, str, str, Dict[str, List[str]]]:
+def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool, str, str, Dict[str, List[str]], Dict[str, Any], Dict[str, Any]]:
     """
     Verify a directory against a manifest.
     
@@ -50,6 +50,8 @@ def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool,
         - expected_root (str): The root hash from the manifest
         - actual_root (str): The computed root hash
         - diffs (dict): Dictionary of added, removed, modified files
+        - old_files (dict): Original manifest file data
+        - new_files (dict): Current directory file data
     """
     # 1. Load Manifest
     manifest = load_manifest(manifest_path)
@@ -66,4 +68,4 @@ def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool,
     if not success:
         diffs = compare_manifests(manifest, new_manifest_data)
         
-    return success, expected_root, actual_root, diffs
+    return success, expected_root, actual_root, diffs, manifest.get('files', {}), new_manifest_data.get('files', {})

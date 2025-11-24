@@ -153,4 +153,4 @@ cython_debug/
 
 # Project specific
 manifest.json
-test_dir/
+test/
