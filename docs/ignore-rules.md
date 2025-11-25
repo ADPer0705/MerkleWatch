@@ -203,6 +203,213 @@ logs/
 *.rar
 ```
 
+## Comprehensive Ignore Patterns
+
+Below is a broader, categorized reference of common ignore patterns used across many ecosystems. Use these as a starting point — adapt to your project's needs.
+
+### Operating System
+
+```gitignore
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Other system files
+Icon?
+ehthumbs.db
+```
+
+### Editors & IDEs
+
+```gitignore
+# VS Code
+.vscode/
+
+# JetBrains (PyCharm, IntelliJ)
+.idea/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Emacs
+*~
+.#*
+
+# Vim
+*.swp
+*.swo
+Session.vim
+
+# Eclipse
+.metadata/
+```
+
+### Language / Platform Specific
+
+Python
+```gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+venv/
+env/
+.venv/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+```
+
+Node.js
+```gitignore
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+```
+
+Java / JVM
+```gitignore
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+*.iml
+```
+
+Rust / Cargo
+```gitignore
+target/
+**/*.rlib
+Cargo.lock
+```
+
+Go
+```gitignore
+bin/
+*.exe
+*.test
+```
+
+.NET
+```gitignore
+bin/
+obj/
+*.user
+*.suo
+*.cache
+```
+
+C/C++
+```gitignore
+*.o
+*.obj
+*.so
+*.exe
+build/
+```
+
+### Build, Packaging & CI
+
+```gitignore
+dist/
+build/
+out/
+coverage/
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+/.cache
+pip-wheel-metadata/
+```
+
+### Container / Docker
+
+```gitignore
+docker-compose.override.yml
+Dockerfile.*.local
+*.dockerfile
+```
+
+### Archives, Backups & Large Files
+
+```gitignore
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bak
+*.old
+*.backup
+```
+
+### Logs & Temp
+
+```gitignore
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+```
+
+### Package Manager & Tooling Caches
+
+```gitignore
+# pip / Python
+.cache/
+
+# npm / node
+npm-debug.log*
+```
+
+### CI / Continuous Integration
+
+```gitignore
+# Travis
+.travis/
+
+# CircleCI
+.circleci/
+
+# GitHub Actions artifacts
+.github/workflows/
+```
+
+### Misc / Other
+
+```gitignore
+# Editor backups and history
+*.swp
+*.swo
+*~
+
+# Thumbnails
+Thumbs.db
+
+# Locks and runtime state
+*.lock
+```
+
+Tip: put comments explaining why large or sensitive items are ignored (e.g., "node_modules — huge, rebuilt from package.json").
+
 ## Interactive Configuration
 
 Use the `ignore` command for guided setup:

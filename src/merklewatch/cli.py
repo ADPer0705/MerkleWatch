@@ -7,6 +7,8 @@ from .manifest import create_manifest_structure, save_manifest
 from .verification import verify_directory, load_manifest, compare_manifests
 from .diff import display_verification_diff, display_full_diff
 from .ignore import IgnoreRules
+from .common_ignores import COMMON_IGNORES, get_all_common_patterns
+import fnmatch
 
 app = typer.Typer()
 
@@ -25,6 +27,16 @@ def snapshot(
     try:
         # Initialize ignore rules
         ignore_rules = IgnoreRules(directory)
+
+        # If the output manifest is inside the scanned directory, temporarily ignore it
+        try:
+            rel_out = out.relative_to(directory)
+            # ignore the relative path and the filename
+            ignore_rules.add_pattern(str(rel_out))
+            ignore_rules.add_pattern(rel_out.name)
+        except Exception:
+            # output is not inside directory — nothing to do
+            pass
         
         root_hash = scan_directory(directory, directory, manifest_data, ignore_rules)
         
@@ -110,103 +122,144 @@ def ignore(
     directory: Path = typer.Argument(..., help="The directory to configure ignores for", exists=True, file_okay=False, dir_okay=True, resolve_path=True)
 ):
     """
-    Interactively configure .merkleignore file.
+    Interactively configure .merkleignore rules.
     """
-    ignore_file = directory / ".merkleignore"
+    typer.echo(f"Scanning {directory} for ignore suggestions...")
     
-    # 1. Load existing ignores
-    existing_ignores = []
-    if ignore_file.exists():
-        with open(ignore_file, 'r') as f:
-            existing_ignores = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    ignore_rules = IgnoreRules(directory)
+    existing_patterns = set(ignore_rules.patterns)
     
-    typer.echo(f"Configuring ignores for {directory}")
-    if existing_ignores:
-        typer.echo(f"Found {len(existing_ignores)} existing ignore patterns.")
-    
-    # 2. Scan for common junk
-    common_patterns = [
-        ".git/", "__pycache__/", "node_modules/", ".DS_Store", 
-        "venv/", ".env", "dist/", "build/", "*.pyc", ".pytest_cache/"
-    ]
-    
-    found_common = []
-    # Simple check if these exist in root
-    for pattern in common_patterns:
-        clean_pattern = pattern.rstrip('/')
-        if (directory / clean_pattern).exists() or any(directory.glob(pattern)):
-            if pattern not in existing_ignores:
-                found_common.append(pattern)
-    
-    new_ignores = []
-    
-    # 3. Ask to add common ignores
-    if found_common:
-        selected_common = questionary.checkbox(
-            "Found common ignore candidates. Select ones to add:",
-            choices=[questionary.Choice(p, checked=True) for p in found_common]
-        ).ask()
-        
-        if selected_common:
-            new_ignores.extend(selected_common)
-            
-    # 4. Interactive file picker
-    if questionary.confirm("Do you want to browse and ignore other files/directories?").ask():
-        # Get all files and directories (limit depth to avoid massive lists?)
-        # For now, let's just do top-level and maybe one level deep or just top level?
-        # A full recursive tree might be too big for a simple list.
-        # Let's do a recursive scan but limit to reasonable count or depth.
-        
-        paths = []
+    # Collect all relative paths for fuzzy finding and pattern matching
+    all_paths = []
+    try:
         for root, dirs, files in os.walk(directory):
-            # Skip .git and other hidden dirs to avoid noise
+            # Skip .git and other common hidden dirs to speed up and avoid noise
             if '.git' in dirs:
                 dirs.remove('.git')
                 
             rel_root = Path(root).relative_to(directory)
             
-            if rel_root == Path('.'):
-                prefix = ""
-            else:
-                prefix = str(rel_root) + "/"
-                
-            for d in dirs:
-                path = prefix + d + "/"
-                if path not in existing_ignores and path not in new_ignores:
-                    paths.append(path)
+            if rel_root != Path('.'):
+                all_paths.append(str(rel_root) + '/')
             
             for f in files:
-                path = prefix + f
-                if path not in existing_ignores and path not in new_ignores and path != ".merkleignore":
-                    paths.append(path)
-                    
-        # Sort paths
-        paths.sort()
+                path = rel_root / f
+                all_paths.append(str(path))
+    except Exception as e:
+        typer.echo(f"Error scanning directory: {e}", err=True)
+        raise typer.Exit(code=1)
+
+    # Find relevant common patterns
+    suggested_patterns = []
+    common_patterns = get_all_common_patterns()
+    
+    # Check which common patterns match files in the directory
+    # This is a simple check: does this pattern match ANY file we found?
+    matched_common = set()
+    
+    with typer.progressbar(common_patterns, label="Checking common patterns") as progress:
+        for pattern in progress:
+            # Check if pattern matches any path
+            # We need to handle directory patterns (ending in /) vs file patterns
+            is_match = False
+            for path in all_paths:
+                if pattern.endswith('/'):
+                    if path.startswith(pattern) or fnmatch.fnmatch(path, pattern):
+                        is_match = True
+                        break
+                else:
+                    if fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(os.path.basename(path), pattern):
+                        is_match = True
+                        break
+            
+            if is_match:
+                matched_common.add(pattern)
+
+    # Group matched patterns by category for display
+    choices = []
+    for category, patterns in COMMON_IGNORES.items():
+        category_matches = [p for p in patterns if p in matched_common]
+        if category_matches:
+            choices.append(questionary.Separator(f"--- {category} ---"))
+            for p in category_matches:
+                checked = p in existing_patterns
+                choices.append(questionary.Choice(p, checked=checked))
+
+    if choices:
+        typer.echo("\nFound common patterns matching files in your directory:")
+        selected = questionary.checkbox(
+            "Select patterns to ignore:",
+            choices=choices
+        ).ask()
         
-        if paths:
-            selected_custom = questionary.checkbox(
-                "Select files/directories to ignore (use space to select, type to filter):",
-                choices=paths
+        if selected is not None:
+            # Add selected, remove unselected (only from the set of common patterns we presented)
+            # Actually, safer to just add selected ones that aren't there, 
+            # and maybe ask about removing ones that were there but unchecked?
+            # For simplicity, let's just ensure selected are in.
+            for p in selected:
+                ignore_rules.add_pattern(p)
+    else:
+        typer.echo("No common ignore patterns matched files in this directory.")
+
+    # Main interaction loop
+    while True:
+        action = questionary.select(
+            "What would you like to do?",
+            choices=[
+                "Add file/directory (Fuzzy Find)",
+                "Add pattern (Manual)",
+                "Remove pattern",
+                "View current patterns",
+                "Save & Exit",
+                "Cancel"
+            ]
+        ).ask()
+        
+        if action == "Add file/directory (Fuzzy Find)":
+            target = questionary.autocomplete(
+                "Start typing to find file/directory:",
+                choices=all_paths
+            ).ask()
+            if target:
+                ignore_rules.add_pattern(target)
+                typer.echo(f"Added: {target}")
+                
+        elif action == "Add pattern (Manual)":
+            pattern = questionary.text("Enter ignore pattern:").ask()
+            if pattern:
+                ignore_rules.add_pattern(pattern)
+                typer.echo(f"Added: {pattern}")
+                
+        elif action == "Remove pattern":
+            if not ignore_rules.patterns:
+                typer.echo("No patterns to remove.")
+                continue
+                
+            to_remove = questionary.checkbox(
+                "Select patterns to remove:",
+                choices=[questionary.Choice(p) for p in ignore_rules.patterns]
             ).ask()
             
-            if selected_custom:
-                new_ignores.extend(selected_custom)
-        else:
-            typer.echo("No other files found to ignore.")
-
-    # 5. Save
-    if new_ignores:
-        all_ignores = existing_ignores + new_ignores
-        # Remove duplicates while preserving order
-        unique_ignores = list(dict.fromkeys(all_ignores))
-        
-        with open(ignore_file, 'w') as f:
-            for pattern in unique_ignores:
-                f.write(f"{pattern}\n")
+            if to_remove:
+                for p in to_remove:
+                    ignore_rules.remove_pattern(p)
+                typer.echo(f"Removed {len(to_remove)} patterns.")
                 
-        typer.echo(f"Updated {ignore_file} with {len(new_ignores)} new patterns.")
-    else:
-        typer.echo("No changes made.")
+        elif action == "View current patterns":
+            typer.echo("\nCurrent Ignore Patterns:")
+            for p in ignore_rules.patterns:
+                typer.echo(f"  - {p}")
+            typer.echo("")
+            
+        elif action == "Save & Exit":
+            if ignore_rules.save():
+                typer.echo(f"Saved ignore rules to {ignore_rules.ignore_file}")
+            break
+            
+        elif action == "Cancel":
+            typer.echo("Changes discarded.")
+            break
 
 if __name__ == "__main__":
     app()

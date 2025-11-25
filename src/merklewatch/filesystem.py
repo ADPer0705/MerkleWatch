@@ -47,6 +47,7 @@ def scan_directory(current_path: Path, root_path: Path, manifest_data: Dict[str,
             continue
         
         # Skip symlinks to avoid loops and security issues
+        # TODO: Implement symlink handling
         if full_path.is_symlink():
             typer.echo(f"Warning: Skipping symlink {full_path.relative_to(root_path)}", err=True)
             continue
