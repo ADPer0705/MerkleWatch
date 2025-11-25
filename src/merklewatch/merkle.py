@@ -7,22 +7,7 @@ def compute_merkle_root(hashes: List[str]) -> str:
     The hashes should already be sorted (e.g., by filename) before calling this.
     """
     if not hashes:
-        # Return a hash of empty bytes or a specific constant for empty directory?
-        # For now, let's return a hash of empty string with internal prefix, 
-        # or maybe just a null hash. 
-        # Let's assume an empty directory has a specific hash.
-        # But wait, SHA256(0x01 || empty || empty)?
-        # Let's stick to a simple convention: if empty, maybe return a hash of empty bytes?
-        # Or maybe the caller ensures it's never empty?
-        # A directory can be empty.
-        # Let's use a placeholder for now, or just hash of empty bytes.
-        # README doesn't specify empty directory behavior.
-        # I'll return a hash of an empty string for now to be safe.
-        # Actually, standard Merkle trees usually handle empty lists by returning a specific zero hash.
-        # Let's return the hash of an empty string using the internal prefix for consistency?
-        # Or just return None?
-        # Let's return a hash of empty bytes with LEAF prefix? No, it's a directory.
-        # Let's just return a hash of b''.
+        # Empty tree case
         from .hashing import hash_node, PREFIX_INTERNAL
         return hash_node(PREFIX_INTERNAL, b'')
 

@@ -2,7 +2,6 @@ import typer
 import questionary
 import os
 from pathlib import Path
-from typing import Optional, List
 from .filesystem import scan_directory
 from .manifest import create_manifest_structure, save_manifest
 from .verification import verify_directory, load_manifest, compare_manifests

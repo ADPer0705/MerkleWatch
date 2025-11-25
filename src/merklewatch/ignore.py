@@ -4,7 +4,7 @@ Ignore rules for MerkleWatch.
 import os
 import fnmatch
 from pathlib import Path
-from typing import List, Set
+from typing import List
 
 class IgnoreRules:
     """Handle ignore patterns for file scanning."""
@@ -24,8 +24,9 @@ class IgnoreRules:
                         line = line.strip()
                         if line and not line.startswith('#'):
                             self.patterns.append(line)
-            except Exception:
-                pass  # Fail silently on read errors
+            except Exception as e:
+                print(f"Error Loading Ignore file: {self.ignore_file}: {e}")
+                print("Continuing without ignore patterns.")
     
     def should_ignore(self, path: Path) -> bool:
         """
@@ -37,6 +38,7 @@ class IgnoreRules:
         Returns:
             True if path should be ignored
         """
+        # No patterns means nothing is ignored
         if not self.patterns:
             return False
             
@@ -49,9 +51,6 @@ class IgnoreRules:
                 
             # Convert to string with forward slashes for consistency
             path_str = str(rel_path).replace(os.sep, '/')
-            
-            # Also check if this is a directory for matching
-            is_directory = path.is_dir()
             
             # Check each pattern
             for pattern in self.patterns:

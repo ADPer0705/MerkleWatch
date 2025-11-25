@@ -1,7 +1,7 @@
 import os
 import typer
 from pathlib import Path
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, Any, Optional
 from .hashing import hash_file, compute_leaf_hash, compute_directory_hash
 from .merkle import compute_merkle_root
 from .ignore import IgnoreRules

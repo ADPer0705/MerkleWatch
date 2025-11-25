@@ -1,6 +1,5 @@
 import hashlib
 from pathlib import Path
-from typing import Union
 
 # Domain separation prefixes
 PREFIX_LEAF = b'\x00'
