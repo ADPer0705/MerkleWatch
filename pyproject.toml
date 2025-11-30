@@ -31,7 +31,7 @@ Repository = "https://github.com/ADPer0705/MerkleWatch"
 Issues = "https://github.com/ADPer0705/MerkleWatch/issues"
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "black"]
+dev = ["pytest", "ruff", "black", "build", "twine"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

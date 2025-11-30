@@ -38,6 +38,12 @@ A CLI-first integrity verification tool that creates **tamper-evident snapshots*
 
 - Python 3.10 or higher
 
+### Install from PyPI (Recommended)
+
+```bash
+pip install merklewatch
+```
+
 ### Install from Source
 
 ```bash

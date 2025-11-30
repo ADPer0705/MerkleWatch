@@ -155,3 +155,4 @@ cython_debug/
 manifest.json
 test/
 TODO.md
+.pypitoken
