@@ -41,7 +41,7 @@ def compare_manifests(old_manifest: Dict[str, Any], new_manifest_data: Dict[str,
         'modified': sorted(modified)
     }
 
-def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool, str, str, Dict[str, List[str]], Dict[str, Any], Dict[str, Any]]:
+def verify_directory(manifest_path: Path, target_directory: Path) -> Tuple[bool, Optional[str], str, Dict[str, List[str]], Dict[str, Any], Dict[str, Any]]:
     """
     Verify a directory against a manifest.
     
